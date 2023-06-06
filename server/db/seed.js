@@ -1,5 +1,5 @@
 const client = require("./client");
-const { createUser } = require("./users");
+const { createUser, createRecipe } = require("./");
 
 const dropTables = async () => {
     try {
@@ -33,8 +33,11 @@ const createTables = async () => {
         CREATE TABLE recipes(
             id SERIAL PRIMARY KEY,
             title VARCHAR(255) NOT NULL,
+            photo TEXT NOT NULL,
             description TEXT NOT NULL,
-            instructions TEXT NOT NULL
+            ingredients TEXT NOT NULL,
+            instructions TEXT NOT NULL,
+            "userId" INTEGER REFERENCES users(id) NOT NULL
         );
         CREATE TABLE ingredients(
             id SERIAL PRIMARY KEY,
@@ -73,8 +76,8 @@ const createInitialUsers = async () => {
     console.log('Adding initial users to "Users" table...');
     try {
         const usersToCreate = [
-            {email: "foo@gmail.com", username: "foo", password: "password", admin: true}
-            {email: "bar@gmail.com", username: "bar", password: "12345678", admin: false}
+            {email: "foo@gmail.com", username: "foo", password: "password", admin: true},
+            {email: "bar@gmail.com", username: "bar", password: "12345678", admin: false},
             {email: "baz@gmail.com", username: "baz", password: "password", admin: false}
         ];
         const users = await Promise.all(usersToCreate.map(createUser));
@@ -90,12 +93,32 @@ const createInititalRecipes = async () => {
     console.log("Starting to create initial recipes")
     try {
         const recipesToCreate = [
-            {title: , description: , instructions: }
-            {title: , description: , instructions: }
-            {title: , description: , instructions: }
-        ]
+            {title: "recipe1", photo: "", description: "recipe1 description", ingredients: "1 potato" ,instructions: "recipe1 instructions",  userId: 1},
+            {title: "recipe2", photo: "", description: "recipe2 description", ingredients: "2 hams", instructions: "recipe2 instructions",  userId: 2},
+            {title: "recipe3", photo: "",  description: "recipe3 description", ingredients: "4 cheese sticks", instructions: "recipe3 instructions",  userId: 3}
+        ];
+        const recipes = await Promise.all(recipesToCreate.map(createRecipe));
+        console.log(recipes);
+        console.log("Finished creating initial recipes!")
     } catch (error) {
         console.error("Error creating recipes!");
         throw error;
     }
 }
+
+const rebuildDB = async () => {
+    try {
+        await dropTables();
+        await createTables();
+        await createInitialUsers();
+        await createInititalRecipes();
+    } catch (error) {
+        console.error('Error during rebuildDB', error);
+        throw error;
+    } finally {
+        await client.end();
+        console.log("Database has been rebuilt, and you're good to go!");
+    }
+}
+
+rebuildDB();
