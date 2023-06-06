@@ -22,7 +22,7 @@ async function createUser({email, username, password, admin}) {
             VALUES ($1, $2, $3, $4)
             ON CONFLICT (email) DO NOTHING
             RETURNING id, email, username, admin;
-        `, [email, newPassword, username, admin])
+        `, [email, username, newPassword, admin])
         return user;
     } catch (error) {
         console.error("error in createUser helper func", error);
@@ -30,6 +30,40 @@ async function createUser({email, username, password, admin}) {
     }
 }
 
+async function getUser({ email, password }) {
+    try {
+      if(!email || !password) {
+        return;
+      } 
+      const { rows: [user]} = await client.query(`
+        SELECT * FROM users
+        WHERE email = $1;
+      `, [email]);
+      const match = await checkPassword(password, user.password);
+      if(!match) {
+        return null;
+      }
+      delete user.password;
+      return user;
+    } catch (error) {
+      throw error;
+    }
+  };
+
+  async function getUserByUsername(username) {
+    try {
+      const {rows: [user]} = await client.query(`
+        SELECT * FROM users
+        WHERE username = $1
+      `, [username]);
+      return user;
+    } catch (error) {
+      throw error;
+    }
+  };
+
 module.exports = {
-    createUser
+    createUser,
+    getUser,
+    getUserByUsername
 }
